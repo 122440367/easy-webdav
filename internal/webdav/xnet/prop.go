@@ -16,6 +16,7 @@ import (
 	"os"
 	"path/filepath"
 	"strconv"
+	"syscall"
 )
 
 // Proppatch describes a property update instruction as defined in RFC 4918.
@@ -307,6 +308,14 @@ loop:
 
 	f, err := fs.OpenFile(ctx, name, os.O_RDWR, 0)
 	if err != nil {
+		// Local patch (golang/go#23871): opening a collection for writing
+		// fails on disk-backed file systems (EISDIR on Unix, access denied
+		// on Windows) even though the Windows Mini-Redirector PROPPATCHes
+		// collections routinely. Report every property as forbidden within
+		// a 207 instead of failing the whole request with a 500.
+		if os.IsPermission(err) || errors.Is(err, syscall.EISDIR) {
+			return allForbidden(patches), nil
+		}
 		return nil, err
 	}
 	defer f.Close()
@@ -327,13 +336,18 @@ loop:
 	}
 	// The file doesn't implement the optional DeadPropsHolder interface, so
 	// all patches are forbidden.
+	return allForbidden(patches), nil
+}
+
+// allForbidden reports every patched property as forbidden in a 207 response.
+func allForbidden(patches []Proppatch) []Propstat {
 	pstat := Propstat{Status: http.StatusForbidden}
 	for _, patch := range patches {
 		for _, p := range patch.Props {
 			pstat.Props = append(pstat.Props, Property{XMLName: p.XMLName})
 		}
 	}
-	return []Propstat{pstat}, nil
+	return []Propstat{pstat}
 }
 
 func escapeXML(s string) string {
