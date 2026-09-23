@@ -1,0 +1,10 @@
+/data/
+/dist/
+/web/node_modules/
+*.db
+*.db-*
+*.log
+.DS_Store
+*.exe
+.claude/
+.codex/

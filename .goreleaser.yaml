@@ -1,0 +1,32 @@
+version: 2
+project_name: easy-webdav
+before:
+  hooks:
+    - go mod tidy
+builds:
+  - id: binaries
+    main: ./cmd/easy-webdav
+    env: [CGO_ENABLED=0]
+    goos: [linux, darwin, windows]
+    goarch: [amd64, arm64]
+    ldflags:
+      - -s -w -X main.version={{.Version}} -X main.commit={{.Commit}} -X main.built={{.Date}}
+archives:
+  - formats: [tar.gz]
+    format_overrides:
+      - goos: windows
+        formats: [zip]
+checksum:
+  name_template: checksums.txt
+dockers_v2:
+  - images: [ghcr.io/lecritus/easy-webdav]
+    tags: ["{{ .Tag }}", "latest"]
+    platforms: [linux/amd64, linux/arm64]
+    dockerfile: deploy/Dockerfile
+release:
+  prerelease: auto
+  header: "## easy-webdav {{ .Tag }}"
+changelog:
+  sort: asc
+  filters:
+    exclude: ["^docs:", "^test:", "^chore:"]

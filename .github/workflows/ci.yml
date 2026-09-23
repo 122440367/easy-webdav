@@ -1,0 +1,33 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with: { go-version: '1.25' }
+      - uses: actions/setup-node@v4
+        with: { node-version: '22', cache: npm, cache-dependency-path: web/package-lock.json }
+      - run: go vet ./...
+      - run: go test ./...
+      - run: npm ci
+        working-directory: web
+      - run: npm run build
+        working-directory: web
+      - run: npm test
+        working-directory: web
+      - name: Check frontend gzip size
+        shell: bash
+        run: test "$(find internal/web/dist -type f -print0 | xargs -0 gzip -c | wc -c)" -lt 512000
+      - uses: golangci/golangci-lint-action@v6
+        with: { version: v1.61 }
+      - name: Check Conventional Commit pull request title
+        if: github.event_name == 'pull_request'
+        env: { PR_TITLE: ${{ github.event.pull_request.title }} }
+        shell: bash
+        run: echo "$PR_TITLE" | grep -Eq '^(feat|fix|docs|refactor|test|chore|build|ci|perf|revert)(\([^)]+\))?!?: .+'

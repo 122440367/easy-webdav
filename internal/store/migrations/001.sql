@@ -1,0 +1,15 @@
+CREATE TABLE users (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  username TEXT NOT NULL UNIQUE,
+  password_hash TEXT NOT NULL,
+  role TEXT NOT NULL,
+  root_dir TEXT NOT NULL,
+  permission TEXT NOT NULL,
+  quota INTEGER NOT NULL DEFAULT 0,
+  disabled INTEGER NOT NULL DEFAULT 0,
+  created_at INTEGER NOT NULL
+);
+CREATE TABLE sessions (id TEXT PRIMARY KEY, user_id TEXT NOT NULL, last_seen INTEGER NOT NULL);
+CREATE INDEX sessions_last_seen ON sessions(last_seen);
+CREATE TABLE usage (root_dir TEXT PRIMARY KEY, bytes INTEGER NOT NULL DEFAULT 0, updated_at INTEGER NOT NULL);
+CREATE TABLE settings (key TEXT PRIMARY KEY, value TEXT NOT NULL);

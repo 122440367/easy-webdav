@@ -1,0 +1,17 @@
+[Unit]
+Description=easy-webdav file service
+After=network.target
+
+[Service]
+Type=simple
+User=easy-webdav
+Group=easy-webdav
+ExecStart=/usr/local/bin/easy-webdav
+WorkingDirectory=/var/lib/easy-webdav
+Restart=on-failure
+NoNewPrivileges=true
+ProtectSystem=strict
+ReadWritePaths=/var/lib/easy-webdav
+
+[Install]
+WantedBy=multi-user.target

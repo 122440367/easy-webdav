@@ -1,0 +1,13 @@
+services:
+  easy-webdav:
+    build: ..
+    image: ghcr.io/lecritus/easy-webdav:latest
+    ports:
+      - "8080:8080"
+    volumes:
+      - easy-webdav-data:/data
+    environment:
+      EW_DATA_DIR: /data
+      EW_STORAGE_DIR: /data/files
+volumes:
+  easy-webdav-data:
