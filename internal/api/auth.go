@@ -115,7 +115,12 @@ func (a *AuthAPI) Password(w http.ResponseWriter, r *http.Request) {
 		auth.WriteError(w, 500, "PASSWORD_UPDATE_FAILED", "could not update password", nil)
 		return
 	}
-	_ = a.Sessions.RevokeUser(r.Context(), u.ID)
+	// Spec: the current session stays valid, all other sessions are revoked.
+	if c, err := r.Cookie(auth.SessionCookie); err == nil {
+		_ = a.Sessions.RevokeUserExcept(r.Context(), u.ID, c.Value)
+	} else {
+		_ = a.Sessions.RevokeUser(r.Context(), u.ID)
+	}
 	if a.Basic != nil {
 		a.Basic.ClearUser(u.ID)
 	}

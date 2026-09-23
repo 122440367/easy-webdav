@@ -33,7 +33,7 @@
 - [x] 4.7 实现 API：`POST /api/v1/auth/login`、`POST /api/v1/auth/logout`、`GET /api/v1/auth/me`（含 `insecure` 标志）、`POST /api/v1/auth/password`
 - [x] 4.8 实现角色中间件：admin-only 路由返回 `403`
 - [x] 4.9 实现首次运行引导：`GET /api/v1/setup/status`（含 `insecure` 标志）、`POST /api/v1/setup`（创建 admin 并建根目录 `<username>`），存在管理员后锁定；支持 `EW_ADMIN_USER/PASSWORD` 启动时创建
-- [ ] 4.10 单元与 handler 测试：登录成功/失败/禁用、限速、退出后 401、改密吊销会话、setup 锁定、CSRF 拒绝、伪造代理头被忽略、insecure 标志三种场景
+- [x] 4.10 单元与 handler 测试：登录成功/失败/禁用、限速、退出后 401、改密吊销会话、setup 锁定、CSRF 拒绝、伪造代理头被忽略、insecure 标志三种场景
 
 ## 5. 用户管理与运行时设置（user-management）
 
@@ -42,7 +42,7 @@
 - [x] 5.3 创建用户时自动创建根目录并从运行时设置取默认配额与权限；删除用户时保留文件；禁止删除或禁用最后一个管理员
 - [x] 5.4 修改密码/禁用/删除时吊销该用户会话并清空 Basic 认证缓存
 - [x] 5.5 实现运行时设置：`GET /api/v1/settings`（所有已登录用户）、`PUT /api/v1/settings`（admin），进程内缓存即时生效，三项：`default_quota`、`default_permission`、`site_name`
-- [ ] 5.6 测试：重名 `409`、路径穿越与空根目录 `400`、最后管理员 `409`、权限变更即时生效、默认设置应用到新用户、非 admin 改设置 `403`
+- [x] 5.6 测试：重名 `409`、路径穿越与空根目录 `400`、最后管理员 `409`、权限变更即时生效、默认设置应用到新用户、非 admin 改设置 `403`
 
 ## 6. WebDAV 服务（webdav-server）
 

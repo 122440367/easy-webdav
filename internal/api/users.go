@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"net/http"
 	"os"
+	"path"
 	"path/filepath"
 	"strconv"
 	"strings"
@@ -13,12 +14,12 @@ import (
 )
 
 type userInput struct {
-	Username   string `json:"username"`
-	Password   string `json:"password"`
-	RootDir    string `json:"root_dir"`
-	Permission string `json:"permission"`
-	Quota      int64  `json:"quota"`
-	Disabled   bool   `json:"disabled"`
+	Username   string  `json:"username"`
+	Password   string  `json:"password"`
+	RootDir    *string `json:"root_dir"`
+	Permission string  `json:"permission"`
+	Quota      int64   `json:"quota"`
+	Disabled   bool    `json:"disabled"`
 }
 
 func (a *AuthAPI) Users(w http.ResponseWriter, r *http.Request) {
@@ -53,13 +54,16 @@ func (a *AuthAPI) Users(w http.ResponseWriter, r *http.Request) {
 		auth.WriteError(w, 400, "INVALID_USERNAME", err.Error(), nil)
 		return
 	}
-	if input.RootDir == "" {
-		input.RootDir = input.Username
-	}
-	root, err := ValidateRootDir(input.RootDir)
-	if err != nil {
-		auth.WriteError(w, 400, "INVALID_ROOT_DIR", err.Error(), nil)
-		return
+	// An omitted root_dir defaults to the username; an explicitly invalid
+	// value (empty, ".", absolute, escaping) is rejected per spec.
+	root := path.Clean(strings.ReplaceAll(input.Username, `\`, "/"))
+	if input.RootDir != nil {
+		var err error
+		root, err = ValidateRootDir(*input.RootDir)
+		if err != nil {
+			auth.WriteError(w, 400, "INVALID_ROOT_DIR", err.Error(), nil)
+			return
+		}
 	}
 	if input.Permission != "read" && input.Permission != "readwrite" {
 		input.Permission = ""
@@ -175,13 +179,14 @@ func (a *AuthAPI) UserByPath(w http.ResponseWriter, r *http.Request) {
 			auth.WriteError(w, 400, "INVALID_USERNAME", err.Error(), nil)
 			return
 		}
-		if input.RootDir == "" {
-			input.RootDir = target.RootDir
-		}
-		root, err := ValidateRootDir(input.RootDir)
-		if err != nil {
-			auth.WriteError(w, 400, "INVALID_ROOT_DIR", err.Error(), nil)
-			return
+		root := target.RootDir
+		if input.RootDir != nil {
+			var err error
+			root, err = ValidateRootDir(*input.RootDir)
+			if err != nil {
+				auth.WriteError(w, 400, "INVALID_ROOT_DIR", err.Error(), nil)
+				return
+			}
 		}
 		if input.Permission == "" {
 			input.Permission = target.Permission

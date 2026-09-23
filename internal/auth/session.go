@@ -54,6 +54,9 @@ func (s Sessions) Delete(ctx context.Context, id string) error { return s.Store.
 func (s Sessions) RevokeUser(ctx context.Context, userID int64) error {
 	return s.Store.DeleteUserSessions(ctx, fmtInt(userID))
 }
+func (s Sessions) RevokeUserExcept(ctx context.Context, userID int64, keep string) error {
+	return s.Store.DeleteUserSessionsExcept(ctx, fmtInt(userID), keep)
+}
 func ClearCookie() *http.Cookie {
 	return &http.Cookie{Name: SessionCookie, Value: "", Path: "/", MaxAge: -1, HttpOnly: true, SameSite: http.SameSiteLaxMode}
 }

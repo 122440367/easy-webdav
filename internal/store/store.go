@@ -156,6 +156,10 @@ func (s *Store) DeleteUserSessions(ctx context.Context, userID string) error {
 	_, err := s.DB.ExecContext(ctx, `DELETE FROM sessions WHERE user_id=?`, userID)
 	return err
 }
+func (s *Store) DeleteUserSessionsExcept(ctx context.Context, userID, keep string) error {
+	_, err := s.DB.ExecContext(ctx, `DELETE FROM sessions WHERE user_id=? AND id<>?`, userID, keep)
+	return err
+}
 
 func (s *Store) Usage(ctx context.Context, root string) (int64, error) {
 	var n int64

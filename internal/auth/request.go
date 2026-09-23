@@ -35,7 +35,9 @@ func WithRequestMeta(r *http.Request, trusted []*net.IPNet) *http.Request {
 	}
 	ip := net.ParseIP(meta.IP)
 	meta.Loopback = ip != nil && ip.IsLoopback()
-	meta.Insecure = meta.Protocol != "https"
+	// The warning condition from the admin-auth spec: plain HTTP from a
+	// non-loopback source. Loopback traffic is local and needs no warning.
+	meta.Insecure = meta.Protocol != "https" && !meta.Loopback
 	return r.WithContext(context.WithValue(r.Context(), metaKey, meta))
 }
 
@@ -43,7 +45,8 @@ func Meta(r *http.Request) RequestMeta {
 	if v, ok := r.Context().Value(metaKey).(RequestMeta); ok {
 		return v
 	}
-	return RequestMeta{IP: clientIP(r.RemoteAddr), Protocol: "http", Insecure: true}
+	ip := net.ParseIP(clientIP(r.RemoteAddr))
+	return RequestMeta{IP: clientIP(r.RemoteAddr), Protocol: "http", Loopback: ip != nil && ip.IsLoopback(), Insecure: ip == nil || !ip.IsLoopback()}
 }
 func clientIP(address string) string {
 	host, _, err := net.SplitHostPort(address)
