@@ -110,4 +110,4 @@
 
 - [x] 11.1 编写 README（中英双语）：一句话介绍、三种启动方式（二进制/docker run/compose/systemd）、配置项表（含日志与代理项）、配置文件示例、客户端挂载指南与兼容性表、安全建议（TLS 与不安全警告说明）
 - [x] 11.2 编写 CONTRIBUTING.md（Conventional Commits、本地开发无需 Docker、fork 补丁流程）与 issue/PR 模板
-- [ ] 11.3 打 `v0.1.0` tag 并确认 release 产物完整
+- [x] 11.3 打 `v0.1.0` tag 并确认 release 产物完整
