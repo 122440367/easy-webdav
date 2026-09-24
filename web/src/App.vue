@@ -3,6 +3,7 @@ import { computed, onMounted, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useRoute, useRouter } from 'vue-router'
 import { NAlert, NButton, NConfigProvider, NSpin, darkTheme, dateEnUS, dateZhCN, enUS, lightTheme, zhCN } from 'naive-ui'
+import ConnectDialog from './components/ConnectDialog.vue'
 import { useSessionStore } from './store'
 
 const session = useSessionStore()
@@ -12,6 +13,7 @@ const router = useRouter()
 const stored = localStorage.getItem('ew-theme')
 const systemDark = typeof matchMedia === 'function' && matchMedia('(prefers-color-scheme: dark)').matches
 const dark = ref(stored ? stored === 'dark' : systemDark)
+const connectOpen = ref(false)
 
 watch(dark, (value) => {
   localStorage.setItem('ew-theme', value ? 'dark' : 'light')
@@ -65,6 +67,7 @@ onMounted(() => {
           >
             {{ dark ? '☀' : '☾' }}
           </n-button>
+          <n-button v-if="session.user" quaternary size="small" @click="connectOpen = true">{{ t('connect') }}</n-button>
           <n-button v-if="session.user" quaternary size="small" @click="signOut">{{ t('signOut') }}</n-button>
         </div>
       </header>
@@ -75,6 +78,12 @@ onMounted(() => {
           <div v-else style="min-height: 50vh" />
         </n-spin>
       </main>
+      <connect-dialog
+        v-if="session.user"
+        v-model:show="connectOpen"
+        :username="session.user.username"
+        :insecure="session.insecure"
+      />
     </div>
   </n-config-provider>
 </template>

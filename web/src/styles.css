@@ -335,6 +335,44 @@ h2 {
   width: min(940px, 94vw);
 }
 
+.connect-card {
+  width: min(720px, 94vw);
+}
+
+.snippet-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 8px 0;
+}
+
+.snippet-row > :first-child {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.snippet {
+  margin: 0;
+  padding: 10px 12px;
+  overflow-x: auto;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  font: 13px/1.5 ui-monospace, SFMono-Regular, Menlo, monospace;
+  white-space: pre-wrap;
+  word-break: break-all;
+}
+
+.steps {
+  margin: 4px 0 10px;
+  padding-left: 20px;
+  color: var(--muted);
+}
+
+.steps li {
+  margin: 4px 0;
+}
+
 .preview img,
 .preview video {
   display: block;
