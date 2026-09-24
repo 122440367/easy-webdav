@@ -64,17 +64,24 @@ func (a *BasicAuthenticator) Authenticate(r *http.Request) (store.User, bool) {
 }
 func (a *BasicAuthenticator) Middleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		ip := Meta(r).IP
 		if a.Limiter != nil {
-			if allowed, retry := a.Limiter.Allow(Meta(r).IP); !allowed {
+			if allowed, retry := a.Limiter.Allow(ip); !allowed {
 				RateLimited(w, retry)
 				return
 			}
 		}
 		u, ok := a.Authenticate(r)
 		if !ok {
+			if a.Limiter != nil {
+				a.Limiter.Fail(ip)
+			}
 			w.Header().Set("WWW-Authenticate", `Basic realm="easy-webdav"`)
 			http.Error(w, "authentication required", http.StatusUnauthorized)
 			return
+		}
+		if a.Limiter != nil {
+			a.Limiter.Reset(ip)
 		}
 		next.ServeHTTP(w, r.WithContext(contextWithUser(r.Context(), u)))
 	})

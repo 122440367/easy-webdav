@@ -21,21 +21,40 @@ type LoginLimiter struct {
 func NewLoginLimiter() *LoginLimiter {
 	return &LoginLimiter{entries: map[string]limiterEntry{}, limit: 10, window: 5 * time.Minute}
 }
+
+// Allow reports whether an attempt from ip may proceed right now. It only
+// inspects state; failures must be recorded with Fail and successes clear
+// the streak with Reset.
 func (l *LoginLimiter) Allow(ip string) (bool, time.Duration) {
+	l.mu.Lock()
+	defer l.mu.Unlock()
+	entry := l.entries[ip]
+	if entry.started.IsZero() || time.Since(entry.started) >= l.window || entry.count < l.limit {
+		return true, 0
+	}
+	return false, l.window - time.Since(entry.started)
+}
+
+// Fail records a failed attempt, opening a new window when the previous one
+// has expired.
+func (l *LoginLimiter) Fail(ip string) {
 	l.mu.Lock()
 	defer l.mu.Unlock()
 	now := time.Now()
 	entry := l.entries[ip]
 	if entry.started.IsZero() || now.Sub(entry.started) >= l.window {
 		l.entries[ip] = limiterEntry{started: now, count: 1}
-		return true, 0
-	}
-	if entry.count >= l.limit {
-		return false, l.window - now.Sub(entry.started)
+		return
 	}
 	entry.count++
 	l.entries[ip] = entry
-	return true, 0
+}
+
+// Reset clears the failure streak for ip after a successful authentication.
+func (l *LoginLimiter) Reset(ip string) {
+	l.mu.Lock()
+	defer l.mu.Unlock()
+	delete(l.entries, ip)
 }
 func RateLimited(w http.ResponseWriter, retry time.Duration) {
 	seconds := int(retry.Seconds())

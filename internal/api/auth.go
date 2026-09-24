@@ -66,8 +66,14 @@ func (a *AuthAPI) Login(w http.ResponseWriter, r *http.Request) {
 	}
 	u, err := a.Store.UserByName(r.Context(), input.Username)
 	if err != nil || u.Disabled || !auth.CheckPassword(u.PasswordHash, input.Password) {
+		if a.Limiter != nil {
+			a.Limiter.Fail(meta.IP)
+		}
 		auth.WriteError(w, 401, "INVALID_CREDENTIALS", "invalid username or password", nil)
 		return
+	}
+	if a.Limiter != nil {
+		a.Limiter.Reset(meta.IP)
 	}
 	cookie, err := a.Sessions.Create(r.Context(), u.ID, meta.Protocol == "https")
 	if err != nil {
@@ -133,7 +139,16 @@ func (a *AuthAPI) SetupStatus(w http.ResponseWriter, r *http.Request) {
 		auth.WriteError(w, 500, "STORE_ERROR", "could not check setup state", nil)
 		return
 	}
-	writeJSON(w, 200, map[string]any{"required": count == 0, "insecure": auth.Meta(r).Insecure})
+	settings, err := a.Store.Settings(r.Context())
+	if err != nil {
+		auth.WriteError(w, 500, "STORE_ERROR", "could not load site settings", nil)
+		return
+	}
+	siteName := settings["site_name"]
+	if siteName == "" {
+		siteName = "easy-webdav"
+	}
+	writeJSON(w, 200, map[string]any{"required": count == 0, "insecure": auth.Meta(r).Insecure, "site_name": siteName})
 }
 
 func (a *AuthAPI) Setup(w http.ResponseWriter, r *http.Request) {
