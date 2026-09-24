@@ -21,6 +21,14 @@ import (
 )
 
 // TODO: add tests to check XML responses with the expected prefix path
+// isTrailingSlashRedirect reports whether the status is the redirect that
+// net/http's ServeMux issues for a collection URL missing its trailing slash.
+// Toolchains before Go 1.27 answer 301, later ones answer 307 so that non-GET
+// methods keep their verb (RFC 9110). The vendored test accepts either.
+func isTrailingSlashRedirect(status int) bool {
+	return status == http.StatusMovedPermanently || status == http.StatusTemporaryRedirect
+}
+
 func TestPrefix(t *testing.T) {
 	const dst, blah = "Destination", "blah blah blah"
 
@@ -53,7 +61,7 @@ func TestPrefix(t *testing.T) {
 			return nil, err
 		}
 		defer res.Body.Close()
-		if res.StatusCode != wantStatusCode {
+		if res.StatusCode != wantStatusCode && !(isTrailingSlashRedirect(wantStatusCode) && isTrailingSlashRedirect(res.StatusCode)) {
 			return nil, fmt.Errorf("got status code %d, want %d", res.StatusCode, wantStatusCode)
 		}
 		return res.Header, nil
