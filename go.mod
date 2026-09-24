@@ -1,4 +1,4 @@
-module github.com/lecritus/easy-webdav
+module github.com/122440367/easy-webdav
 
 go 1.25.0
 

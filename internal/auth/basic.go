@@ -7,7 +7,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/lecritus/easy-webdav/internal/store"
+	"github.com/122440367/easy-webdav/internal/store"
 )
 
 type basicEntry struct {

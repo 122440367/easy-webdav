@@ -1,7 +1,7 @@
 services:
   easy-webdav:
     build: ..
-    image: ghcr.io/lecritus/easy-webdav:latest
+    image: ghcr.io/122440367/easy-webdav:latest
     ports:
       - "8080:8080"
     volumes:

@@ -10,7 +10,7 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/lecritus/easy-webdav/internal/store"
+	"github.com/122440367/easy-webdav/internal/store"
 )
 
 func TestDownloadMultiplePathsAsZip(t *testing.T) {

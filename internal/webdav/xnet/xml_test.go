@@ -16,7 +16,7 @@ import (
 	"strings"
 	"testing"
 
-	ixml "github.com/lecritus/easy-webdav/internal/webdav/xnet/internal/xml"
+	ixml "github.com/122440367/easy-webdav/internal/webdav/xnet/internal/xml"
 )
 
 func TestReadLockInfo(t *testing.T) {

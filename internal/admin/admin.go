@@ -15,10 +15,10 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/lecritus/easy-webdav/internal/api"
-	"github.com/lecritus/easy-webdav/internal/auth"
-	"github.com/lecritus/easy-webdav/internal/config"
-	"github.com/lecritus/easy-webdav/internal/store"
+	"github.com/122440367/easy-webdav/internal/api"
+	"github.com/122440367/easy-webdav/internal/auth"
+	"github.com/122440367/easy-webdav/internal/config"
+	"github.com/122440367/easy-webdav/internal/store"
 )
 
 const usage = `usage: easy-webdav admin <command> [flags]

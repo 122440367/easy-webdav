@@ -6,9 +6,9 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/lecritus/easy-webdav/internal/auth"
-	"github.com/lecritus/easy-webdav/internal/store"
-	upstream "github.com/lecritus/easy-webdav/internal/webdav/xnet"
+	"github.com/122440367/easy-webdav/internal/auth"
+	"github.com/122440367/easy-webdav/internal/store"
+	upstream "github.com/122440367/easy-webdav/internal/webdav/xnet"
 )
 
 type Service struct {

@@ -7,15 +7,15 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/lecritus/easy-webdav/internal/api"
-	"github.com/lecritus/easy-webdav/internal/auth"
-	"github.com/lecritus/easy-webdav/internal/config"
-	"github.com/lecritus/easy-webdav/internal/logging"
-	"github.com/lecritus/easy-webdav/internal/quota"
-	"github.com/lecritus/easy-webdav/internal/store"
-	"github.com/lecritus/easy-webdav/internal/upload"
-	webassets "github.com/lecritus/easy-webdav/internal/web"
-	dav "github.com/lecritus/easy-webdav/internal/webdav"
+	"github.com/122440367/easy-webdav/internal/api"
+	"github.com/122440367/easy-webdav/internal/auth"
+	"github.com/122440367/easy-webdav/internal/config"
+	"github.com/122440367/easy-webdav/internal/logging"
+	"github.com/122440367/easy-webdav/internal/quota"
+	"github.com/122440367/easy-webdav/internal/store"
+	"github.com/122440367/easy-webdav/internal/upload"
+	webassets "github.com/122440367/easy-webdav/internal/web"
+	dav "github.com/122440367/easy-webdav/internal/webdav"
 )
 
 type Server struct {

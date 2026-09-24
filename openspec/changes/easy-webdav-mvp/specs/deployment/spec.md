@@ -16,10 +16,10 @@
 - **THEN** 输出版本号、Git 提交与构建时间
 
 ### Requirement: Docker image
-项目 SHALL 发布多架构（amd64、arm64）Docker 镜像至 `ghcr.io/lecritus/easy-webdav`。容器 MUST 以非 root 用户运行，数据目录 MUST 为 `/data`，默认监听 `8080`；镜像压缩后大小 MUST 小于 30 MB。
+项目 SHALL 发布多架构（amd64、arm64）Docker 镜像至 `ghcr.io/122440367/easy-webdav`。容器 MUST 以非 root 用户运行，数据目录 MUST 为 `/data`，默认监听 `8080`；镜像压缩后大小 MUST 小于 30 MB。
 
 #### Scenario: One-line docker run
-- **WHEN** 用户执行 `docker run -d -p 8080:8080 -v ./data:/data ghcr.io/lecritus/easy-webdav`
+- **WHEN** 用户执行 `docker run -d -p 8080:8080 -v ./data:/data ghcr.io/122440367/easy-webdav`
 - **THEN** 容器启动，浏览器访问 `http://localhost:8080` 显示首次运行引导
 
 #### Scenario: PUID/PGID support

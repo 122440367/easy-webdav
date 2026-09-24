@@ -116,8 +116,8 @@ deploy/                  Dockerfile、docker-compose.yml、easy-webdav.service�
 
 ### D10. 发布：GoReleaser + GitHub Actions + ghcr.io
 
-- 仓库 `github.com/lecritus/easy-webdav`，默认分支 `main`，MIT 许可。
-- `goreleaser` 一次产出六平台二进制、checksums、多架构镜像推 `ghcr.io/lecritus/easy-webdav`；release notes 按 Conventional Commits 类型自动分组，不手写 CHANGELOG。CI 校验 PR 标题与提交信息符合规范。
+- 仓库 `github.com/122440367/easy-webdav`，默认分支 `main`，MIT 许可。
+- `goreleaser` 一次产出六平台二进制、checksums、多架构镜像推 `ghcr.io/122440367/easy-webdav`；release notes 按 Conventional Commits 类型自动分组，不手写 CHANGELOG。CI 校验 PR 标题与提交信息符合规范。
 - Dockerfile 基于 `gcr.io/distroless/static` 或 `scratch`，包含 CA 证书与时区数据。PUID/PGID 实现方式见 Open Questions。
 - 本地 Makefile 中 Docker 相关目标（镜像构建、litmus、rclone 测试）检测到无 Docker 时跳过并提示，不阻塞其他目标。
 

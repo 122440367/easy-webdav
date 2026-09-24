@@ -38,13 +38,13 @@
 
 ## Impact
 
-- 仓库：`github.com/lecritus/easy-webdav`，默认分支 `main`，MIT 许可。新建整个仓库结构，包含 Go 后端（`cmd/`、`internal/`）、前端工程（`web/`）、Dockerfile、CI 工作流。
+- 仓库：`github.com/122440367/easy-webdav`，默认分支 `main`，MIT 许可。新建整个仓库结构，包含 Go 后端（`cmd/`、`internal/`）、前端工程（`web/`）、Dockerfile、CI 工作流。
 - 依赖：Go 1.25 以上；协议层将 `golang.org/x/net/webdav` 源码复制进仓库（BSD-3 许可）并直接打补丁修复已知客户端兼容问题，不作为外部依赖引用；SQLite 使用纯 Go 驱动 `modernc.org/sqlite`，避免 CGO；前端 Vue 3 + TypeScript + Vite + Naive UI + vue-i18n，Node 22 以上构建，产物通过 `embed` 打进二进制。
 - 对外接口：
   - `/dav/` WebDAV 端点（Basic 认证）。
   - `/api/v1/` 管理与文件浏览 JSON API（会话 Cookie 认证）。
   - `/` 管理面板与文件浏览器页面。
   - `/healthz` 健康检查。
-- 运行环境：Linux、macOS、Windows 三平台 amd64/arm64 二进制；Docker 镜像 `ghcr.io/lecritus/easy-webdav`，基于 distroless 或 scratch。
+- 运行环境：Linux、macOS、Windows 三平台 amd64/arm64 二进制；Docker 镜像 `ghcr.io/122440367/easy-webdav`，基于 distroless 或 scratch。
 - 开发环境约束：本地不依赖 Docker，Docker 相关的兼容性测试与镜像构建只在 CI 中执行。
 - 非目标（本次不做）：分享链接、回收站、多存储后端（S3 等）、OAuth/LDAP 登录、单用户多虚拟目录、文件版本历史、在线编辑、图片缩略图、Prometheus 指标、API Token、跨页面刷新的断点续传、用户自助注册。这些留给后续变更。

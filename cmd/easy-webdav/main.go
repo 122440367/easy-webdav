@@ -12,12 +12,12 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/lecritus/easy-webdav/internal/admin"
-	"github.com/lecritus/easy-webdav/internal/config"
-	"github.com/lecritus/easy-webdav/internal/privdrop"
-	"github.com/lecritus/easy-webdav/internal/quota"
-	"github.com/lecritus/easy-webdav/internal/server"
-	"github.com/lecritus/easy-webdav/internal/store"
+	"github.com/122440367/easy-webdav/internal/admin"
+	"github.com/122440367/easy-webdav/internal/config"
+	"github.com/122440367/easy-webdav/internal/privdrop"
+	"github.com/122440367/easy-webdav/internal/quota"
+	"github.com/122440367/easy-webdav/internal/server"
+	"github.com/122440367/easy-webdav/internal/store"
 )
 
 var (

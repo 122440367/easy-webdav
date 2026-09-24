@@ -9,7 +9,7 @@ import (
 	"strings"
 	"sync/atomic"
 
-	upstream "github.com/lecritus/easy-webdav/internal/webdav/xnet"
+	upstream "github.com/122440367/easy-webdav/internal/webdav/xnet"
 )
 
 type RestrictedFS struct {

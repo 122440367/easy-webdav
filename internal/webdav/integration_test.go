@@ -11,8 +11,8 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/lecritus/easy-webdav/internal/auth"
-	"github.com/lecritus/easy-webdav/internal/store"
+	"github.com/122440367/easy-webdav/internal/auth"
+	"github.com/122440367/easy-webdav/internal/store"
 )
 
 // newTestService builds a DAV service backed by a temporary storage root and

@@ -9,7 +9,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/lecritus/easy-webdav/internal/store"
+	"github.com/122440367/easy-webdav/internal/store"
 )
 
 func TestRecalculateFixesDriftAndIgnoresTempData(t *testing.T) {

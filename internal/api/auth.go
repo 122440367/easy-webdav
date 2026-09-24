@@ -9,8 +9,8 @@ import (
 	"path/filepath"
 	"strconv"
 
-	"github.com/lecritus/easy-webdav/internal/auth"
-	"github.com/lecritus/easy-webdav/internal/store"
+	"github.com/122440367/easy-webdav/internal/auth"
+	"github.com/122440367/easy-webdav/internal/store"
 )
 
 type AuthAPI struct {

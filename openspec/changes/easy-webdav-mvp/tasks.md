@@ -1,6 +1,6 @@
 ## 1. 仓库骨架与工具链
 
-- [x] 1.1 `git init`，默认分支 `main`；`go mod init github.com/lecritus/easy-webdav`，`go.mod` 声明 Go 1.25；创建 design.md D9 中的目录结构，添加 `cmd/easy-webdav/main.go` 空壳，`go build` 通过
+- [x] 1.1 `git init`，默认分支 `main`；`go mod init github.com/122440367/easy-webdav`，`go.mod` 声明 Go 1.25；创建 design.md D9 中的目录结构，添加 `cmd/easy-webdav/main.go` 空壳，`go build` 通过
 - [x] 1.2 添加 `.gitignore`、`LICENSE`（MIT）、`README.md` 占位、`Makefile`（build/test/lint/web 目标；Docker 相关目标检测无 Docker 时跳过并提示）
 - [x] 1.3 初始化 `web/` Vite + Vue 3 + TypeScript 工程，引入 Naive UI、vue-i18n、Pinia、vue-router；`package.json` 声明 Node 22 以上；`npm run build` 产出到 `internal/web/dist`
 - [x] 1.4 实现 `internal/web`：用 `embed` 打包 `dist`，提供 SPA 回退与 `<base href>` 注入；`go build` 后单二进制能返回 index.html
@@ -103,7 +103,7 @@
 - [x] 10.4 实现可选 TLS（`EW_TLS_CERT/KEY`）与 graceful shutdown（30 秒上限，清理临时文件）
 - [x] 10.5 编写 `deploy/Dockerfile`（多阶段构建，distroless/scratch，非 root，`/data`，HEALTHCHECK）与 PUID/PGID 支持（实现方式按 design Open Questions 推荐）
 - [x] 10.6 编写 `deploy/docker-compose.yml`、`deploy/easy-webdav.service`（systemd，专用用户，`/var/lib/easy-webdav`）与 `deploy/nginx.example.conf`（子路径反代示例）
-- [x] 10.7 配置 GoReleaser：六平台二进制、checksums、多架构镜像推 `ghcr.io/lecritus/easy-webdav`、按 Conventional Commits 生成 release notes；`.github/workflows/release.yml` 在 tag 时触发
+- [x] 10.7 配置 GoReleaser：六平台二进制、checksums、多架构镜像推 `ghcr.io/122440367/easy-webdav`、按 Conventional Commits 生成 release notes；`.github/workflows/release.yml` 在 tag 时触发
 - [ ] 10.8 端到端验证（CI 或有 Docker 的机器）：干净机器运行二进制、`docker run` 一行启动、`docker compose up -d`、systemd 单元启动、nginx 子路径下面板与 WebDAV 可用、镜像 < 30 MB、日志三种模式输出正确
 
 ## 11. 文档与发布

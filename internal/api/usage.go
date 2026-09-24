@@ -5,9 +5,9 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/lecritus/easy-webdav/internal/auth"
-	"github.com/lecritus/easy-webdav/internal/diskusage"
-	"github.com/lecritus/easy-webdav/internal/quota"
+	"github.com/122440367/easy-webdav/internal/auth"
+	"github.com/122440367/easy-webdav/internal/diskusage"
+	"github.com/122440367/easy-webdav/internal/quota"
 )
 
 func (a *AuthAPI) Usage(w http.ResponseWriter, r *http.Request) {

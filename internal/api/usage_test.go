@@ -11,8 +11,8 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/lecritus/easy-webdav/internal/auth"
-	"github.com/lecritus/easy-webdav/internal/store"
+	"github.com/122440367/easy-webdav/internal/auth"
+	"github.com/122440367/easy-webdav/internal/store"
 )
 
 func createUser(t *testing.T, a *AuthAPI, u store.User) store.User {

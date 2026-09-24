@@ -8,8 +8,8 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	"github.com/lecritus/easy-webdav/internal/auth"
-	"github.com/lecritus/easy-webdav/internal/store"
+	"github.com/122440367/easy-webdav/internal/auth"
+	"github.com/122440367/easy-webdav/internal/store"
 )
 
 func adminRequest(t *testing.T, a *AuthAPI, method, url string, body any) (*httptest.ResponseRecorder, *http.Request) {

@@ -13,7 +13,7 @@ import (
 	"time"
 
 	"github.com/google/uuid"
-	"github.com/lecritus/easy-webdav/internal/quota"
+	"github.com/122440367/easy-webdav/internal/quota"
 )
 
 type Session struct {
