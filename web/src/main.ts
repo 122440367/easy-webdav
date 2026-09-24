@@ -1,8 +1,10 @@
 import { createApp } from 'vue'
 import { createPinia } from 'pinia'
-import { createRouter, createWebHistory } from 'vue-router'
 import App from './App.vue'
 import { i18n } from './i18n'
+import { router } from './router'
+import './styles.css'
 
-const router = createRouter({ history: createWebHistory(), routes: [{ path: '/:pathMatch(.*)*', component: App }] })
-createApp(App).use(createPinia()).use(router).use(i18n).mount('#app')
+const app = createApp(App)
+app.use(createPinia()).use(router).use(i18n)
+router.isReady().then(() => app.mount('#app'))
