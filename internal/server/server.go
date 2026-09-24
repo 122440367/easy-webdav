@@ -59,7 +59,7 @@ func New(c config.Config, db *store.Store) *Server {
 	mux := http.NewServeMux()
 	mux.HandleFunc("GET /healthz", func(w http.ResponseWriter, r *http.Request) {
 		if err := db.Ping(r.Context()); err != nil {
-			http.Error(w, "database unavailable", 503)
+			http.Error(w, "database unavailable", http.StatusServiceUnavailable)
 			return
 		}
 		w.WriteHeader(200)

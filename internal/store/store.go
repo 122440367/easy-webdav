@@ -111,7 +111,7 @@ func (s *Store) ListUsers(ctx context.Context) ([]User, error) {
 	if err != nil {
 		return nil, err
 	}
-	defer rows.Close()
+	defer func() { _ = rows.Close() }()
 	var result []User
 	for rows.Next() {
 		u, err := scanUserRow(rows)
@@ -186,7 +186,7 @@ func (s *Store) Settings(ctx context.Context) (map[string]string, error) {
 	if err != nil {
 		return nil, err
 	}
-	defer rows.Close()
+	defer func() { _ = rows.Close() }()
 	out := map[string]string{}
 	for rows.Next() {
 		var k, v string

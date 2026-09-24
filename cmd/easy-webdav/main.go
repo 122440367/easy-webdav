@@ -86,7 +86,7 @@ func main() {
 		fmt.Fprintln(os.Stderr, err)
 		os.Exit(1)
 	}
-	defer db.Close()
+	defer func() { _ = db.Close() }()
 	srv := server.New(effective.Config, db)
 	if err := srv.Auth.Bootstrap(context.Background(), effective.Config.AdminUser, effective.Config.AdminPassword); err != nil {
 		fmt.Fprintln(os.Stderr, err)
@@ -151,7 +151,7 @@ func healthcheck(args []string) int {
 		fmt.Fprintln(os.Stderr, "healthcheck:", err)
 		return 1
 	}
-	defer response.Body.Close()
+	defer func() { _ = response.Body.Close() }()
 	if response.StatusCode != http.StatusOK {
 		fmt.Fprintf(os.Stderr, "healthcheck: %s returned %s\n", url, response.Status)
 		return 1

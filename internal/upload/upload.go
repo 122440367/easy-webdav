@@ -121,7 +121,7 @@ func (m *Manager) Complete(id string) (string, error) {
 	if s == nil {
 		return "", errors.New("unknown upload")
 	}
-	defer os.RemoveAll(filepath.Dir(s.Temp))
+	defer func() { _ = os.RemoveAll(filepath.Dir(s.Temp)) }()
 	if s.Received != s.Total {
 		return "", errors.New("upload size mismatch")
 	}
@@ -179,12 +179,12 @@ type Input struct {
 func (m *Manager) Handler(root func(*http.Request) (string, error), readOnly func(*http.Request) bool) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if readOnly(r) {
-			http.Error(w, "read-only", 403)
+			http.Error(w, "read-only", http.StatusForbidden)
 			return
 		}
 		base, err := root(r)
 		if err != nil {
-			http.Error(w, "forbidden", 403)
+			http.Error(w, "forbidden", http.StatusForbidden)
 			return
 		}
 		parts := strings.Split(strings.TrimPrefix(r.URL.Path, "/api/v1/uploads"), "/")
@@ -225,7 +225,7 @@ func (m *Manager) Handler(root func(*http.Request) (string, error), readOnly fun
 			n, _ := strconv.Atoi(parts[3])
 			written, err := m.Chunk(id, n, r.Body)
 			if err != nil {
-				http.Error(w, err.Error(), 409)
+				http.Error(w, err.Error(), http.StatusConflict)
 				return
 			}
 			write(w, 200, map[string]int64{"written": written})
@@ -234,7 +234,7 @@ func (m *Manager) Handler(root func(*http.Request) (string, error), readOnly fun
 		if len(parts) >= 3 && parts[2] == "complete" && r.Method == http.MethodPost {
 			destination, err := m.Complete(id)
 			if err != nil {
-				http.Error(w, err.Error(), 409)
+				http.Error(w, err.Error(), http.StatusConflict)
 				return
 			}
 			write(w, 200, map[string]string{"path": destination})

@@ -284,7 +284,7 @@ func copyPath(source, destination string) error {
 			if e != nil {
 				return e
 			}
-			defer in.Close()
+			defer func() { _ = in.Close() }()
 			out, e := os.OpenFile(dst, os.O_CREATE|os.O_WRONLY|os.O_TRUNC, item.Mode())
 			if e != nil {
 				return e
@@ -301,7 +301,7 @@ func copyPath(source, destination string) error {
 	if err != nil {
 		return err
 	}
-	defer in.Close()
+	defer func() { _ = in.Close() }()
 	out, err := os.OpenFile(destination, os.O_CREATE|os.O_WRONLY|os.O_TRUNC, info.Mode())
 	if err != nil {
 		return err

@@ -23,7 +23,7 @@ func testAPI(t *testing.T) *AuthAPI {
 	if err != nil {
 		t.Fatal(err)
 	}
-	t.Cleanup(func() { db.Close() })
+	t.Cleanup(func() { _ = db.Close() })
 	return &AuthAPI{Store: db, Sessions: auth.Sessions{Store: db}, Limiter: auth.NewLoginLimiter(), StorageDir: filepath.Join(t.TempDir(), "files")}
 }
 

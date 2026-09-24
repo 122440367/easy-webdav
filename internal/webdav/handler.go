@@ -32,7 +32,7 @@ func (s *Service) Handler() http.Handler {
 		}
 		u, ok := auth.UserFromContext(r.Context())
 		if !ok {
-			http.Error(w, "authentication required", 401)
+			http.Error(w, "authentication required", http.StatusUnauthorized)
 			return
 		}
 		// Read-only users are rejected before the request reaches the

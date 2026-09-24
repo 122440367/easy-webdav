@@ -73,7 +73,7 @@ func AtomicWrite(dst string, src io.Reader, limit int64) (int64, error) {
 		return 0, err
 	}
 	tmpName := tmp.Name()
-	defer os.Remove(tmpName)
+	defer func() { _ = os.Remove(tmpName) }()
 	counter := &CountingWriter{Writer: tmp, Limit: limit}
 	_, copyErr := io.Copy(counter, src)
 	closeErr := tmp.Close()

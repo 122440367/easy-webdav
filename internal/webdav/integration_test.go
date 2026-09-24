@@ -23,7 +23,7 @@ func newTestService(t *testing.T) (*Service, string, string) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	t.Cleanup(func() { db.Close() })
+	t.Cleanup(func() { _ = db.Close() })
 	storage := t.TempDir()
 	hash, err := auth.HashPassword("password123")
 	if err != nil {
@@ -76,7 +76,7 @@ func do(t *testing.T, client *http.Client, method, url, body string, headers map
 	if err != nil {
 		t.Fatal(err)
 	}
-	t.Cleanup(func() { resp.Body.Close() })
+	t.Cleanup(func() { _ = resp.Body.Close() })
 	return resp
 }
 
@@ -154,7 +154,7 @@ func TestWebDAVProtocolBehaviour(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
-		defer resp.Body.Close()
+		defer func() { _ = resp.Body.Close() }()
 		if resp.StatusCode != 201 {
 			t.Fatalf("MOVE without Overwrite status %d", resp.StatusCode)
 		}
@@ -208,7 +208,7 @@ func TestWebDAVProtocolBehaviour(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
-		defer resp.Body.Close()
+		defer func() { _ = resp.Body.Close() }()
 		if resp.StatusCode/100 != 2 {
 			t.Fatalf("owner PUT with token status %d", resp.StatusCode)
 		}
@@ -265,7 +265,7 @@ func TestWebDAVReadOnlyUser(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 	if resp.StatusCode != 403 {
 		t.Fatalf("read user COPY status %d", resp.StatusCode)
 	}
@@ -289,7 +289,7 @@ func TestWebDAVDestinationBoundary(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
-		defer resp.Body.Close()
+		defer func() { _ = resp.Body.Close() }()
 		if resp.StatusCode != 403 {
 			t.Fatalf("%s outside destination: expected 403, got %d", method, resp.StatusCode)
 		}
