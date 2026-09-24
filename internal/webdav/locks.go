@@ -18,7 +18,15 @@ func (l scopedLocks) name(value string) string {
 	return filepath.ToSlash(filepath.Join(l.base, value))
 }
 func (l scopedLocks) Confirm(now time.Time, a, b string, c ...upstream.Condition) (func(), error) {
-	return l.inner.Confirm(now, l.name(a), l.name(b), c...)
+	// Empty names must stay empty: routing them through name() would turn
+	// them into the user root itself and fail lock confirmation (412).
+	if a != "" {
+		a = l.name(a)
+	}
+	if b != "" {
+		b = l.name(b)
+	}
+	return l.inner.Confirm(now, a, b, c...)
 }
 func (l scopedLocks) Create(now time.Time, d upstream.LockDetails) (string, error) {
 	d.Root = l.name(d.Root)

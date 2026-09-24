@@ -35,17 +35,35 @@ func (s *Service) Handler() http.Handler {
 			http.Error(w, "authentication required", 401)
 			return
 		}
+		// Read-only users are rejected before the request reaches the
+		// protocol layer so every write method reports a clean 403.
+		if u.Permission == "read" {
+			switch r.Method {
+			case "PUT", "DELETE", "MKCOL", "COPY", "MOVE", "PROPPATCH", "LOCK":
+				http.Error(w, "write access denied", http.StatusForbidden)
+				return
+			}
+		}
 		if r.Method == "COPY" || r.Method == "MOVE" {
 			if !destinationInside(r, filepath.Join(s.StorageRoot, u.RootDir)) {
 				http.Error(w, "destination outside user root", http.StatusForbidden)
 				return
 			}
 		}
-		fs, err := NewRestrictedFS(filepath.Join(s.StorageRoot, u.RootDir), u.Permission == "read")
+		root := filepath.Join(s.StorageRoot, u.RootDir)
+		fs, err := NewRestrictedFS(root, u.Permission == "read")
 		if err != nil {
 			http.Error(w, "storage unavailable", 500)
 			return
 		}
+		used, err := s.Store.Usage(r.Context(), root)
+		if err != nil {
+			http.Error(w, "usage unavailable", 500)
+			return
+		}
+		fs.SetQuota(u.Quota, used, filepath.Join(s.StorageRoot, ".ew-tmp"), func(delta int64) error {
+			return s.Store.AddUsage(r.Context(), root, delta)
+		})
 		h := &upstream.Handler{Prefix: "/dav/", FileSystem: fs, LockSystem: scopedLocks{base: filepath.Clean(filepath.Join(s.StorageRoot, u.RootDir)), inner: s.Locks}}
 		h.ServeHTTP(w, r)
 	}))

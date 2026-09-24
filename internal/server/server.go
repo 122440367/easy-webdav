@@ -3,6 +3,7 @@ package server
 import (
 	"context"
 	"net/http"
+	"os"
 	"path/filepath"
 	"strings"
 
@@ -29,16 +30,26 @@ func New(c config.Config, db *store.Store) *Server {
 	authAPI := &api.AuthAPI{Store: db, Sessions: auth.Sessions{Store: db}, Limiter: auth.NewLoginLimiter(), StorageDir: c.StorageDir, Basic: basic}
 	davService := dav.NewService(c.StorageDir, db)
 	uploads := upload.NewManager(c.StorageDir)
-	uploads.Precheck = func(root string, total int64) error {
+	uploads.Precheck = func(root, relative string, total int64, strategy string) error {
 		users, err := db.ListUsers(context.Background())
 		if err != nil {
 			return err
 		}
 		for _, u := range users {
 			if filepath.Clean(filepath.Join(c.StorageDir, u.RootDir)) == filepath.Clean(root) && u.Quota > 0 {
-				used, _ := db.Usage(context.Background(), root)
-				if used+total > u.Quota {
-					return quota.ErrExceeded
+				used, err := db.Usage(context.Background(), root)
+				if err != nil {
+					return err
+				}
+				var oldSize int64
+				if strategy == "overwrite" {
+					if info, err := os.Stat(filepath.Join(root, filepath.FromSlash(relative))); err == nil && !info.IsDir() {
+						oldSize = info.Size()
+					}
+				}
+				remaining := u.Quota - used + oldSize
+				if total > remaining {
+					return quota.ExceededError{Remaining: max(remaining, 0)}
 				}
 			}
 		}
@@ -84,7 +95,13 @@ func New(c config.Config, db *store.Store) *Server {
 	wrapped := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		trusted, _ := auth.ParseTrustedProxies(c.TrustedProxies)
 		r = auth.WithRequestMeta(r, trusted)
-		auth.CSRF(mux).ServeHTTP(w, r)
+		// CSRF protection applies to session-cookie APIs only; WebDAV
+		// clients use Basic auth and never send custom headers.
+		if strings.HasPrefix(r.URL.Path, "/api/") {
+			auth.CSRF(mux).ServeHTTP(w, r)
+			return
+		}
+		mux.ServeHTTP(w, r)
 	})
 	logger := logging.New(c.LogFormat, c.LogLevel)
 	return &Server{Config: c, Store: db, Auth: authAPI, HTTP: &http.Server{Addr: c.Listen, Handler: logging.Access(logger, c.AccessLog, wrapped)}}

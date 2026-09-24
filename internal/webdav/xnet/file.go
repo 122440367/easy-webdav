@@ -716,6 +716,9 @@ func copyFiles(ctx context.Context, fs FileSystem, src, dst string, overwrite bo
 				d := path.Join(dst, name)
 				cStatus, cErr := copyFiles(ctx, fs, s, d, overwrite, depth, recursion)
 				if cErr != nil {
+					if cStatus == http.StatusInsufficientStorage {
+						_ = fs.RemoveAll(ctx, dst)
+					}
 					// TODO: MultiStatus.
 					return cStatus, cErr
 				}
@@ -735,7 +738,7 @@ func copyFiles(ctx context.Context, fs FileSystem, src, dst string, overwrite bo
 		propsErr := copyProps(dstFile, srcFile)
 		closeErr := dstFile.Close()
 		if copyErr != nil {
-			return http.StatusInternalServerError, copyErr
+			return statusForError(copyErr, http.StatusInternalServerError), copyErr
 		}
 		if propsErr != nil {
 			return http.StatusInternalServerError, propsErr

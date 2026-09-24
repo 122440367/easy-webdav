@@ -6,6 +6,7 @@ import (
 	"io"
 	"os"
 	"path/filepath"
+	"strconv"
 	"sync"
 	"time"
 
@@ -13,6 +14,18 @@ import (
 )
 
 var ErrExceeded = errors.New("quota exceeded")
+
+// ExceededError is returned by upload prechecks. It reports the remaining
+// space so callers can hand the number to clients (API 413 responses).
+type ExceededError struct{ Remaining int64 }
+
+func (e ExceededError) Error() string {
+	return "quota exceeded: " + strconv.FormatInt(e.Remaining, 10) + " bytes remaining"
+}
+
+// Is keeps errors.Is(err, ErrExceeded) working for callers that only care
+// about the sentinel.
+func (e ExceededError) Is(target error) bool { return target == ErrExceeded }
 
 type Manager struct {
 	Store *store.Store

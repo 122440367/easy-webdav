@@ -13,19 +13,21 @@ import (
 	"time"
 
 	"github.com/google/uuid"
+	"github.com/lecritus/easy-webdav/internal/quota"
 )
 
 type Session struct {
 	ID                   string
 	Root, Relative, Temp string
 	Total, Received      int64
+	PreviousSize         int64
 	Next                 int
 	Strategy             string
 	Created              time.Time
 }
 type Manager struct {
 	Storage  string
-	Precheck func(root string, total int64) error
+	Precheck func(root, relative string, total int64, strategy string) error
 	Commit   func(root string, delta int64) error
 	mu       sync.Mutex
 	sessions map[string]*Session
@@ -46,12 +48,29 @@ func (m *Manager) Create(root, relative string, total int64, strategy string) (*
 	if strategy != "overwrite" && strategy != "skip" && strategy != "rename" {
 		strategy = "overwrite"
 	}
+	destination := filepath.Join(root, filepath.FromSlash(relative))
+	var previousSize int64
+	if info, err := os.Stat(destination); err == nil {
+		if info.IsDir() && strategy != "rename" {
+			return nil, errors.New("destination is a directory")
+		}
+		if strategy == "overwrite" && !info.IsDir() {
+			previousSize = info.Size()
+		}
+	} else if !os.IsNotExist(err) {
+		return nil, err
+	}
+	if m.Precheck != nil {
+		if err := m.Precheck(root, relative, total, strategy); err != nil {
+			return nil, err
+		}
+	}
 	id := uuid.NewString()
 	temp := filepath.Join(m.Storage, ".ew-tmp", id)
 	if err := os.MkdirAll(temp, 0750); err != nil {
 		return nil, err
 	}
-	s := &Session{ID: id, Root: root, Relative: relative, Temp: filepath.Join(temp, "payload"), Total: total, Strategy: strategy, Created: time.Now()}
+	s := &Session{ID: id, Root: root, Relative: relative, Temp: filepath.Join(temp, "payload"), Total: total, PreviousSize: previousSize, Strategy: strategy, Created: time.Now()}
 	m.mu.Lock()
 	m.sessions[id] = s
 	m.mu.Unlock()
@@ -59,30 +78,37 @@ func (m *Manager) Create(root, relative string, total int64, strategy string) (*
 }
 func (m *Manager) Chunk(id string, n int, body io.Reader) (int64, error) {
 	m.mu.Lock()
+	defer m.mu.Unlock()
 	s := m.sessions[id]
 	if s != nil && n != s.Next {
-		s = nil
+		return 0, errors.New("invalid or out-of-order chunk")
 	}
-	m.mu.Unlock()
 	if s == nil {
 		return 0, errors.New("invalid or out-of-order chunk")
+	}
+	remaining := s.Total - s.Received
+	if remaining < 0 {
+		return 0, errors.New("upload exceeds declared size")
 	}
 	f, err := os.OpenFile(s.Temp, os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0600)
 	if err != nil {
 		return 0, err
 	}
-	written, err := io.Copy(f, body)
+	written, err := io.Copy(f, io.LimitReader(body, remaining+1))
 	ce := f.Close()
+	if written > remaining {
+		_ = os.RemoveAll(filepath.Dir(s.Temp))
+		delete(m.sessions, id)
+		return written, errors.New("upload exceeds declared size")
+	}
 	if err != nil {
 		return written, err
 	}
 	if ce != nil {
 		return written, ce
 	}
-	m.mu.Lock()
 	s.Received += written
 	s.Next++
-	m.mu.Unlock()
 	return written, nil
 }
 func (m *Manager) Complete(id string) (string, error) {
@@ -115,7 +141,8 @@ func (m *Manager) Complete(id string) (string, error) {
 		return "", err
 	}
 	if m.Commit != nil {
-		if err := m.Commit(s.Root, s.Received); err != nil {
+		delta := s.Received - s.PreviousSize
+		if err := m.Commit(s.Root, delta); err != nil {
 			return "", err
 		}
 	}
@@ -172,8 +199,15 @@ func (m *Manager) Handler(root func(*http.Request) (string, error), readOnly fun
 				return
 			}
 			if m.Precheck != nil {
-				if err := m.Precheck(base, in.Total); err != nil {
-					http.Error(w, err.Error(), 413)
+				if err := m.Precheck(base, filepath.ToSlash(strings.TrimPrefix(in.Path, "/")), in.Total, in.Strategy); err != nil {
+					// The web API answers with 413 and tells the client how
+					// much room is left so the panel can explain the failure.
+					var exceeded quota.ExceededError
+					if errors.As(err, &exceeded) {
+						write(w, 413, map[string]any{"code": "QUOTA_EXCEEDED", "message": err.Error(), "details": map[string]int64{"remaining": exceeded.Remaining}})
+						return
+					}
+					write(w, 413, map[string]any{"code": "QUOTA_EXCEEDED", "message": err.Error()})
 					return
 				}
 			}

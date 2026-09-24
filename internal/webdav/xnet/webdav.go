@@ -40,6 +40,14 @@ func (h *Handler) stripPrefix(p string) (string, int, error) {
 	return p, http.StatusNotFound, errPrefixMismatch
 }
 
+func statusForError(err error, fallback int) int {
+	var statusError interface{ HTTPStatus() int }
+	if errors.As(err, &statusError) {
+		return statusError.HTTPStatus()
+	}
+	return fallback
+}
+
 func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	status, err := http.StatusBadRequest, errUnsupportedMethod
 	if h.FileSystem == nil {
@@ -277,7 +285,7 @@ func (h *Handler) handlePut(w http.ResponseWriter, r *http.Request) (status int,
 	closeErr := f.Close()
 	// TODO(rost): Returning 405 Method Not Allowed might not be appropriate.
 	if copyErr != nil {
-		return http.StatusMethodNotAllowed, copyErr
+		return statusForError(copyErr, http.StatusMethodNotAllowed), copyErr
 	}
 	if statErr != nil {
 		return http.StatusMethodNotAllowed, statErr
