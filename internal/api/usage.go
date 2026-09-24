@@ -6,6 +6,7 @@ import (
 	"path/filepath"
 
 	"github.com/lecritus/easy-webdav/internal/auth"
+	"github.com/lecritus/easy-webdav/internal/diskusage"
 	"github.com/lecritus/easy-webdav/internal/quota"
 )
 
@@ -28,7 +29,11 @@ func (a *AuthAPI) Usage(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if r.URL.Path == "/api/v1/usage/me" {
-		used, _ := a.Store.Usage(r.Context(), filepath.Join(a.StorageDir, u.RootDir))
+		used, err := a.Store.Usage(r.Context(), filepath.Join(a.StorageDir, u.RootDir))
+		if err != nil {
+			auth.WriteError(w, 500, "STORE_ERROR", err.Error(), nil)
+			return
+		}
 		writeJSON(w, 200, map[string]any{"root_dir": u.RootDir, "used": used, "quota": u.Quota})
 		return
 	}
@@ -46,9 +51,12 @@ func (a *AuthAPI) Usage(w http.ResponseWriter, r *http.Request) {
 		used, _ := a.Store.Usage(r.Context(), filepath.Join(a.StorageDir, item.RootDir))
 		items = append(items, map[string]any{"user": publicUser(item), "used": used})
 	}
-	disk := map[string]any{}
-	if stat, err := os.Stat(a.StorageDir); err == nil {
-		disk["storage_dir"] = stat.Name()
+	disk := map[string]any{"storage_dir": a.StorageDir}
+	if _, err := os.Stat(a.StorageDir); err == nil {
+		if free, total, err := diskusage.Free(a.StorageDir); err == nil {
+			disk["free"] = free
+			disk["total"] = total
+		}
 	}
 	writeJSON(w, 200, map[string]any{"users": items, "disk": disk})
 }

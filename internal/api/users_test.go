@@ -117,6 +117,52 @@ func TestDefaultSettingsAppliedToNewUsers(t *testing.T) {
 	}
 }
 
+func TestExplicitZeroQuotaOverridesDefaultAndOmittedEditPreservesQuota(t *testing.T) {
+	a := testAPI(t)
+	seedAdmin(t, a)
+	settingsRec, settingsReq := adminRequest(t, a, http.MethodPut, "/api/v1/settings", map[string]string{"default_quota": "500"})
+	a.Settings(settingsRec, settingsReq)
+	if settingsRec.Code != http.StatusOK {
+		t.Fatalf("update settings: %d %s", settingsRec.Code, settingsRec.Body)
+	}
+	zero := int64(0)
+	createdRec, createdReq := adminRequest(t, a, http.MethodPost, "/api/v1/users", userInput{Username: "unlimited", Password: "password123", Quota: &zero})
+	a.Users(createdRec, createdReq)
+	if createdRec.Code != http.StatusCreated {
+		t.Fatalf("create unlimited user: %d %s", createdRec.Code, createdRec.Body)
+	}
+	created, err := a.Store.UserByName(context.Background(), "unlimited")
+	if err != nil || created.Quota != 0 {
+		t.Fatalf("explicit zero quota not preserved: user=%+v err=%v", created, err)
+	}
+	if err := a.Store.UpdateUser(context.Background(), created.ID, created.Username, created.RootDir, created.Permission, 123, false); err != nil {
+		t.Fatal(err)
+	}
+	updatedRec, updatedReq := adminRequest(t, a, http.MethodPut, "/api/v1/users/"+userID(created.ID), userInput{Username: created.Username, RootDir: ptr(created.RootDir), Permission: created.Permission})
+	a.UserByPath(updatedRec, updatedReq)
+	if updatedRec.Code != http.StatusOK {
+		t.Fatalf("edit without quota: %d %s", updatedRec.Code, updatedRec.Body)
+	}
+	updated, err := a.Store.UserByID(context.Background(), created.ID)
+	if err != nil || updated.Quota != 123 {
+		t.Fatalf("omitted quota did not preserve current value: user=%+v err=%v", updated, err)
+	}
+}
+
+func TestAdminCanUploadIntoReadOnlyTarget(t *testing.T) {
+	admin := store.User{ID: 1, Username: "admin", Role: "admin", Permission: "read"}
+	request := httptest.NewRequest(http.MethodPost, "/api/v1/uploads?user_id=2", nil)
+	request = WithUser(admin, request)
+	if UploadReadOnly(request) {
+		t.Fatal("administrator's own read permission blocked cross-user upload")
+	}
+	request = httptest.NewRequest(http.MethodPost, "/api/v1/uploads", nil)
+	request = WithUser(admin, request)
+	if !UploadReadOnly(request) {
+		t.Fatal("read-only administrator should not upload to own root")
+	}
+}
+
 func TestNonAdminCannotChangeSettings(t *testing.T) {
 	a := testAPI(t)
 	seedAdmin(t, a)

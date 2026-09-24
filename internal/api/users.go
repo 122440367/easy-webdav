@@ -18,7 +18,7 @@ type userInput struct {
 	Password   string  `json:"password"`
 	RootDir    *string `json:"root_dir"`
 	Permission string  `json:"permission"`
-	Quota      int64   `json:"quota"`
+	Quota      *int64  `json:"quota"`
 	Disabled   bool    `json:"disabled"`
 }
 
@@ -75,12 +75,15 @@ func (a *AuthAPI) Users(w http.ResponseWriter, r *http.Request) {
 			input.Permission = "readwrite"
 		}
 	}
-	if input.Quota < 0 {
+	if input.Quota != nil && *input.Quota < 0 {
 		auth.WriteError(w, 400, "INVALID_QUOTA", "quota must be zero or greater", nil)
 		return
 	}
-	if input.Quota == 0 && settings["default_quota"] != "" {
-		input.Quota, _ = strconv.ParseInt(settings["default_quota"], 10, 64)
+	quota := int64(0)
+	if input.Quota == nil && settings["default_quota"] != "" {
+		quota, _ = strconv.ParseInt(settings["default_quota"], 10, 64)
+	} else if input.Quota != nil {
+		quota = *input.Quota
 	}
 	hash, err := auth.HashPassword(input.Password)
 	if err != nil {
@@ -91,7 +94,7 @@ func (a *AuthAPI) Users(w http.ResponseWriter, r *http.Request) {
 		auth.WriteError(w, 500, "ROOT_CREATE_FAILED", err.Error(), nil)
 		return
 	}
-	id, err := a.Store.CreateUser(r.Context(), store.User{Username: input.Username, PasswordHash: hash, Role: "user", RootDir: root, Permission: input.Permission, Quota: input.Quota})
+	id, err := a.Store.CreateUser(r.Context(), store.User{Username: input.Username, PasswordHash: hash, Role: "user", RootDir: root, Permission: input.Permission, Quota: quota})
 	if err != nil {
 		auth.WriteError(w, 409, "USER_EXISTS", "username already exists", nil)
 		return
@@ -195,6 +198,14 @@ func (a *AuthAPI) UserByPath(w http.ResponseWriter, r *http.Request) {
 			auth.WriteError(w, 400, "INVALID_PERMISSION", "invalid permission", nil)
 			return
 		}
+		quota := target.Quota
+		if input.Quota != nil {
+			if *input.Quota < 0 {
+				auth.WriteError(w, 400, "INVALID_QUOTA", "quota must be zero or greater", nil)
+				return
+			}
+			quota = *input.Quota
+		}
 		if target.Role == "admin" && input.Disabled {
 			count, _ := a.Store.AdminCount(r.Context())
 			if count <= 1 {
@@ -202,7 +213,7 @@ func (a *AuthAPI) UserByPath(w http.ResponseWriter, r *http.Request) {
 				return
 			}
 		}
-		if err = a.Store.UpdateUser(r.Context(), id, input.Username, root, input.Permission, input.Quota, input.Disabled); err != nil {
+		if err = a.Store.UpdateUser(r.Context(), id, input.Username, root, input.Permission, quota, input.Disabled); err != nil {
 			auth.WriteError(w, 409, "USER_EXISTS", err.Error(), nil)
 			return
 		}
