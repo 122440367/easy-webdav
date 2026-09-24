@@ -61,12 +61,16 @@ jobs:
           curl -fsS http://127.0.0.1:8080/healthz
       - name: Build litmus (DAV compliance suite)
         run: |
+          set -euo pipefail
           sudo apt-get update
           sudo apt-get install -y --no-install-recommends \
             build-essential libxml2-dev libneon27-gnutls-dev zlib1g-dev
           curl -fsSL -o /tmp/litmus.tar.gz https://notroj.github.io/litmus/litmus-0.13.tar.gz
           tar -xzf /tmp/litmus.tar.gz -C /tmp
           cd /tmp/litmus-0.13
+          # litmus 0.13 only knows neon 0.25-0.29; distributions now ship 0.33.
+          sed -i -E 's/0\.2\[5-9\]\*?/0.2[5-9]*|0.3[0-9]*/g' configure
+          sed -i -E 's/0\.25\|0\.26\|0\.27\|0\.28\|0\.29/0.25|0.26|0.27|0.28|0.29|0.3[0-9]/g' configure
           ./configure --with-neon
           make
       - name: litmus DAV compliance
