@@ -8,3 +8,4 @@
 *.exe
 .claude/
 .codex/
+.gocache/

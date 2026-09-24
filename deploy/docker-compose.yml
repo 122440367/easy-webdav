@@ -9,5 +9,13 @@ services:
     environment:
       EW_DATA_DIR: /data
       EW_STORAGE_DIR: /data/files
+      # Set TLS_CERT/TLS_KEY and EW_TRUSTED_PROXIES when running behind a
+      # reverse proxy. The container healthcheck calls `easy-webdav healthcheck`
+      # and therefore needs no extra tooling in the image.
+      # To match a host account, uncomment the user override together with
+      # PUID/PGID: the binary chowns /data and then drops privileges.
+      # EW_PUID: 1000
+      # EW_PGID: 1000
+    # user: "0:0"
 volumes:
   easy-webdav-data:

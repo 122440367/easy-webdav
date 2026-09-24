@@ -1,0 +1,13 @@
+.git
+.github
+.gocache
+.claude
+.codex
+data
+dist
+web/node_modules
+internal/web/dist
+*.db
+*.db-*
+*.exe
+*.log

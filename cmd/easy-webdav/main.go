@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"fmt"
+	"net"
 	"net/http"
 	"os"
 	"os/signal"
@@ -12,6 +13,7 @@ import (
 	"time"
 
 	"github.com/lecritus/easy-webdav/internal/config"
+	"github.com/lecritus/easy-webdav/internal/privdrop"
 	"github.com/lecritus/easy-webdav/internal/quota"
 	"github.com/lecritus/easy-webdav/internal/server"
 	"github.com/lecritus/easy-webdav/internal/store"
@@ -24,6 +26,11 @@ var (
 )
 
 func main() {
+	// `easy-webdav healthcheck` is what the container HEALTHCHECK calls; it
+	// needs no shell or extra tools inside the image.
+	if len(os.Args) > 1 && os.Args[1] == "healthcheck" {
+		os.Exit(healthcheck(os.Args[2:]))
+	}
 	if slices.Contains(os.Args[1:], "--version") {
 		fmt.Printf("easy-webdav %s (%s, %s)\n", version, commit, built)
 		return
@@ -41,6 +48,12 @@ func main() {
 		}
 		fmt.Println(string(output))
 		return
+	}
+	// Containers may start as root only to hand the data directory to the
+	// account named by EW_PUID/EW_PGID; every other deployment skips this.
+	if err := privdrop.MaybeDrop(effective.Config.DataDir); err != nil {
+		fmt.Fprintln(os.Stderr, "privilege drop:", err)
+		os.Exit(1)
 	}
 	if err := config.EnsureDirs(effective.Config); err != nil {
 		fmt.Fprintln(os.Stderr, err)
@@ -71,4 +84,35 @@ func main() {
 	shutdown, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 	defer cancel()
 	_ = srv.Shutdown(shutdown)
+}
+
+// healthcheck probes the local /healthz endpoint and reports the result
+// through the process exit code.
+func healthcheck(args []string) int {
+	effective, err := config.Load(args, os.Getenv)
+	if err != nil {
+		fmt.Fprintln(os.Stderr, err)
+		return 2
+	}
+	host, port, err := net.SplitHostPort(effective.Config.Listen)
+	if err != nil {
+		fmt.Fprintln(os.Stderr, err)
+		return 2
+	}
+	if host == "" || host == "0.0.0.0" || host == "::" || host == "[::]" {
+		host = "127.0.0.1"
+	}
+	url := "http://" + net.JoinHostPort(host, port) + "/healthz"
+	client := &http.Client{Timeout: 3 * time.Second}
+	response, err := client.Get(url)
+	if err != nil {
+		fmt.Fprintln(os.Stderr, "healthcheck:", err)
+		return 1
+	}
+	defer response.Body.Close()
+	if response.StatusCode != http.StatusOK {
+		fmt.Fprintf(os.Stderr, "healthcheck: %s returned %s\n", url, response.Status)
+		return 1
+	}
+	return 0
 }
