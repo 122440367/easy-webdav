@@ -24,8 +24,8 @@ jobs:
       - name: Check frontend gzip size
         shell: bash
         run: test "$(find internal/web/dist -type f -print0 | xargs -0 gzip -c | wc -c)" -lt 512000
-      - uses: golangci/golangci-lint-action@v6
-        with: { version: v1.61 }
+      - uses: golangci/golangci-lint-action@v9
+        with: { version: v2.13.2 }
       - name: Check Conventional Commit pull request title
         if: github.event_name == 'pull_request'
         env:
