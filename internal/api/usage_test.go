@@ -126,10 +126,10 @@ func TestRawPreviewPolicy(t *testing.T) {
 	alice := createUser(t, a, store.User{Username: "alice", RootDir: "alice"})
 	root := filepath.Join(a.StorageDir, "alice")
 	files := map[string]string{
-		"page.html":    "<script>alert(1)</script>",
-		"notes.txt":    "plain text",
-		"photo.png":    "not-a-real-png",
-		"archive.zip":  "PK",
+		"page.html":     "<script>alert(1)</script>",
+		"notes.txt":     "plain text",
+		"photo.png":     "not-a-real-png",
+		"archive.zip":   "PK",
 		"dir/report.md": "# report",
 	}
 	for name, content := range files {

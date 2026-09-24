@@ -12,8 +12,8 @@ import (
 	"sync"
 	"time"
 
-	"github.com/google/uuid"
 	"github.com/122440367/easy-webdav/internal/quota"
+	"github.com/google/uuid"
 )
 
 type Session struct {

@@ -88,14 +88,34 @@ func main() {
 	}
 	defer db.Close()
 	srv := server.New(effective.Config, db)
-	if err := srv.Auth.Bootstrap(context.Background(), effective.Config.AdminUser, effective.Config.AdminPassword); err != nil { fmt.Fprintln(os.Stderr, err); os.Exit(1) }
-	if err := quota.Recalculate(db, effective.Config.StorageDir); err != nil { fmt.Fprintln(os.Stderr, "usage recalculation:", err) }
+	if err := srv.Auth.Bootstrap(context.Background(), effective.Config.AdminUser, effective.Config.AdminPassword); err != nil {
+		fmt.Fprintln(os.Stderr, err)
+		os.Exit(1)
+	}
+	if err := quota.Recalculate(db, effective.Config.StorageDir); err != nil {
+		fmt.Fprintln(os.Stderr, "usage recalculation:", err)
+	}
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
 	defer stop()
-	go func() { ticker:=time.NewTicker(24*time.Hour); defer ticker.Stop(); for { select { case <-ticker.C: if err:=quota.Recalculate(db,effective.Config.StorageDir);err!=nil{fmt.Fprintln(os.Stderr,"usage recalculation:",err)}; case <-ctx.Done(): return } } }()
+	go func() {
+		ticker := time.NewTicker(24 * time.Hour)
+		defer ticker.Stop()
+		for {
+			select {
+			case <-ticker.C:
+				if err := quota.Recalculate(db, effective.Config.StorageDir); err != nil {
+					fmt.Fprintln(os.Stderr, "usage recalculation:", err)
+				}
+			case <-ctx.Done():
+				return
+			}
+		}
+	}()
 	go func() {
 		serve := srv.ListenAndServe
-		if effective.Config.TLSCert != "" { serve = srv.ListenAndServeTLS }
+		if effective.Config.TLSCert != "" {
+			serve = srv.ListenAndServeTLS
+		}
 		if err := serve(); err != nil && err != http.ErrServerClosed {
 			fmt.Fprintln(os.Stderr, err)
 			stop()
