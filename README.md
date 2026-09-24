@@ -16,6 +16,33 @@ Open `http://127.0.0.1:8080`. On first run create the administrator account. The
 ./easy-webdav healthcheck      # 探测本地 /healthz，退出码即结果 / container health probe
 ```
 
+## Command line / 命令行
+
+`easy-webdav [serve] [flags]` starts the server; the flags above are equivalent to the `version` and `config print` subcommands. WebDAV and the panel need nothing else.
+
+```sh
+easy-webdav serve              # 与服务端等价 / same as running the server
+easy-webdav version            # 等价 --version
+easy-webdav config print       # 等价 --print-config（密码脱敏）
+easy-webdav healthcheck        # 探活，容器 HEALTHCHECK 使用
+```
+
+Offline account management runs without the server and is how an operator recovers a lost administrator password:
+
+```sh
+easy-webdav admin create --username admin --admin
+easy-webdav admin list
+easy-webdav admin reset-password --username admin
+```
+
+| Command | Flags | Exit codes |
+|---|---|---|
+| `admin create` | `--username`、`--password`、`--admin`、`--role admin\|user`、`--root-dir`、`--permission read\|readwrite`、`--quota`、`--config`、`--data-dir`、`--storage-dir` | `0` 成功、`1` 冲突/弱密码等运行错误、`2` 用法或校验错误 |
+| `admin reset-password` | `--username`、`--password`、`--config`、`--data-dir`、`--storage-dir`（同时吊销该用户全部会话） | 同上 |
+| `admin list` | `--config`、`--data-dir`、`--storage-dir` | `0` 成功、`2` 配置错误 |
+
+密码来源优先级：`--password` > `EW_ADMIN_PASSWORD` > 交互式提示（终端上不回显）。非交互环境（管道或 CI）从标准输入读取一行，例如 `echo "secret123" | easy-webdav admin create --username ci`。未提供 `--permission`/`--quota` 时沿用面板里的运行时默认值，`--root-dir` 缺省等于用户名。
+
 ## Docker
 
 ```sh

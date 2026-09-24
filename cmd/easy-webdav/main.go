@@ -12,6 +12,7 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/lecritus/easy-webdav/internal/admin"
 	"github.com/lecritus/easy-webdav/internal/config"
 	"github.com/lecritus/easy-webdav/internal/privdrop"
 	"github.com/lecritus/easy-webdav/internal/quota"
@@ -26,21 +27,42 @@ var (
 )
 
 func main() {
-	// `easy-webdav healthcheck` is what the container HEALTHCHECK calls; it
-	// needs no shell or extra tools inside the image.
-	if len(os.Args) > 1 && os.Args[1] == "healthcheck" {
-		os.Exit(healthcheck(os.Args[2:]))
+	args := os.Args[1:]
+	printConfig := slices.Contains(args, "--print-config")
+	printVersion := slices.Contains(args, "--version")
+	if len(args) > 0 {
+		switch args[0] {
+		case "serve":
+			args = args[1:]
+		case "admin":
+			// Offline account management: create users, recover a lost
+			// administrator password, list accounts.
+			os.Exit(admin.Run(args[1:], os.Getenv, os.Stdin, os.Stdout, os.Stderr))
+		case "version":
+			printVersion = true
+		case "config":
+			if len(args) < 2 || args[1] != "print" {
+				fmt.Fprintln(os.Stderr, "usage: easy-webdav config print [flags]")
+				os.Exit(2)
+			}
+			printConfig = true
+			args = args[2:]
+		case "healthcheck":
+			// What the container HEALTHCHECK calls: no shell or extra tools
+			// are needed inside the image.
+			os.Exit(healthcheck(args[1:]))
+		}
 	}
-	if slices.Contains(os.Args[1:], "--version") {
+	if printVersion {
 		fmt.Printf("easy-webdav %s (%s, %s)\n", version, commit, built)
 		return
 	}
-	effective, err := config.Load(os.Args[1:], os.Getenv)
+	effective, err := config.Load(args, os.Getenv)
 	if err != nil {
 		fmt.Fprintln(os.Stderr, err)
 		os.Exit(2)
 	}
-	if slices.Contains(os.Args[1:], "--print-config") {
+	if printConfig {
 		output, err := config.PrintJSON(effective)
 		if err != nil {
 			fmt.Fprintln(os.Stderr, err)
