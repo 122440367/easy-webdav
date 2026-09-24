@@ -19,10 +19,14 @@ archives:
 checksum:
   name_template: checksums.txt
 dockers_v2:
-  - images: [ghcr.io/lecritus/easy-webdav]
-    tags: ["{{ .Tag }}", "latest"]
+  - images: [ghcr.io/122440367/easy-webdav]
+    tags: ["{{ .Tag }}", "{{ .Major }}.{{ .Minor }}", "latest"]
     platforms: [linux/amd64, linux/arm64]
     dockerfile: deploy/Dockerfile
+    build_args:
+      VERSION: "{{ .Version }}"
+      COMMIT: "{{ .Commit }}"
+      BUILT: "{{ .Date }}"
 release:
   prerelease: auto
   header: "## easy-webdav {{ .Tag }}"
