@@ -65,13 +65,16 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y --no-install-recommends \
             build-essential libxml2-dev libneon27-gnutls-dev zlib1g-dev
+          # litmus 0.13 refuses neon newer than 0.29 although it links fine
+          # against it, so the version probe is answered by a small shim while
+          # every other neon-config call still goes to the real library.
+          mkdir -p /tmp/litmus-bin
+          printf '#!/bin/sh\nif [ "$1" = "--version" ]; then echo 0.29.0; exit 0; fi\nexec /usr/bin/neon-config "$@"\n' > /tmp/litmus-bin/neon-config
+          chmod +x /tmp/litmus-bin/neon-config
           curl -fsSL -o /tmp/litmus.tar.gz https://notroj.github.io/litmus/litmus-0.13.tar.gz
           tar -xzf /tmp/litmus.tar.gz -C /tmp
           cd /tmp/litmus-0.13
-          # litmus 0.13 only knows neon 0.25-0.29; distributions now ship 0.33.
-          sed -i -E 's/0\.2\[5-9\]\*?/0.2[5-9]*|0.3[0-9]*/g' configure
-          sed -i -E 's/0\.25\|0\.26\|0\.27\|0\.28\|0\.29/0.25|0.26|0.27|0.28|0.29|0.3[0-9]/g' configure
-          ./configure --with-neon
+          PATH=/tmp/litmus-bin:$PATH ./configure --with-neon
           make
       - name: litmus DAV compliance
         run: |
