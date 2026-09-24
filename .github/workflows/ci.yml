@@ -76,10 +76,9 @@ jobs:
           cd /tmp/litmus-0.13
           PATH=/tmp/litmus-bin:$PATH ./configure --with-neon
           make
+          sudo make install
       - name: litmus DAV compliance
-        run: |
-          cd /tmp/litmus-0.13
-          ./litmus http://127.0.0.1:8080/dav/ ci ci-password
+        run: litmus http://127.0.0.1:8080/dav/ ci ci-password
       - name: rclone create, upload, rename and delete
         run: |
           docker run --rm --network host --entrypoint sh rclone/rclone -c '
