@@ -1,6 +1,7 @@
 package webdav
 
 import (
+	"fmt"
 	"io"
 	"net/http"
 	"net/http/httptest"
@@ -205,4 +206,64 @@ func TestWebDAVConformanceDepthAndDelete(t *testing.T) {
 
 func storageFile(storage, name string) ([]byte, error) {
 	return os.ReadFile(filepath.Join(storage, filepath.FromSlash(name)))
+}
+
+// litmus parity for the lock behaviour the specification does promise: a
+// conditional write with an unknown token must be rejected, and the lock owner
+// may still PROPPATCH the resource (207 with a 403 propstat for the dead
+// property we deliberately do not store).
+func TestWebDAVConformanceLockConditions(t *testing.T) {
+	service, _, _ := newTestService(t)
+	server := httptest.NewServer(service.Handler())
+	t.Cleanup(server.Close)
+	client := davClient(t, "admin")
+	base := server.URL + "/dav/"
+
+	if resp := do(t, client, "PUT", base+"guarded.txt", "v1", nil); resp.StatusCode != 201 {
+		t.Fatalf("seed PUT status %d", resp.StatusCode)
+	}
+	lockBody := `<?xml version="1.0"?><D:lockinfo xmlns:D="DAV:"><D:lockscope><D:exclusive/></D:lockscope><D:locktype><D:write/></D:locktype><D:owner>tester</D:owner></D:lockinfo>`
+	resp := do(t, client, "LOCK", base+"guarded.txt", lockBody, nil)
+	if resp.StatusCode != 200 {
+		t.Fatalf("LOCK status %d", resp.StatusCode)
+	}
+	token := resp.Header.Get("Lock-Token")
+	if token == "" {
+		t.Fatal("LOCK returned no token")
+	}
+
+	bogus := "<urn:uuid:00000000-0000-0000-0000-000000000000>"
+	request, _ := http.NewRequest("PUT", base+"guarded.txt", strings.NewReader("v2"))
+	request.Header.Set("If", fmt.Sprintf("(<%s>)", strings.Trim(bogus, "<>")))
+	response, err := client.Do(request)
+	if err != nil {
+		t.Fatal(err)
+	}
+	_ = response.Body.Close()
+	if response.StatusCode != 412 {
+		t.Fatalf("conditional PUT with an unknown token status %d, want 412", response.StatusCode)
+	}
+	if resp := do(t, client, "GET", base+"guarded.txt", "", nil); resp.StatusCode != 200 {
+		t.Fatalf("GET status %d", resp.StatusCode)
+	} else if body, _ := io.ReadAll(resp.Body); string(body) != "v1" {
+		t.Fatalf("rejected conditional PUT still wrote: %q", body)
+	}
+
+	// The owner presents the real token and may patch the locked resource.
+	patchRequest, _ := http.NewRequest("PROPPATCH", base+"guarded.txt", strings.NewReader(
+		`<?xml version="1.0"?><D:propertyupdate xmlns:D="DAV:"><D:set><D:prop><litmus:random xmlns:litmus="http://webdav.org/neon/litmus/">foobar</litmus:random></D:prop></D:set></D:propertyupdate>`))
+	patchRequest.Header.Set("Content-Type", "application/xml")
+	patchRequest.Header.Set("If", fmt.Sprintf("(<%s>)", strings.Trim(token, "<>")))
+	response, err = client.Do(patchRequest)
+	if err != nil {
+		t.Fatal(err)
+	}
+	body, _ := io.ReadAll(response.Body)
+	_ = response.Body.Close()
+	if response.StatusCode != 207 {
+		t.Fatalf("PROPPATCH by the lock owner status %d, want 207: %s", response.StatusCode, body)
+	}
+	if !strings.Contains(string(body), "403") {
+		t.Fatalf("expected a 403 propstat for the unsupported property: %s", body)
+	}
 }

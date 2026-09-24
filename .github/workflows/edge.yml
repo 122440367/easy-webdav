@@ -8,6 +8,12 @@ on:
     paths-ignore: ['**/*.md', 'openspec/**']
   workflow_dispatch:
 
+# Rapid pushes used to leave several multi-arch builds writing the same cache
+# at once, which stalled them for tens of minutes.
+concurrency:
+  group: edge-${{ github.ref }}
+  cancel-in-progress: true
+
 permissions:
   contents: read
   packages: write
@@ -15,6 +21,7 @@ permissions:
 jobs:
   edge:
     runs-on: ubuntu-latest
+    timeout-minutes: 25
     steps:
       - uses: actions/checkout@v4
       - uses: docker/setup-qemu-action@v3

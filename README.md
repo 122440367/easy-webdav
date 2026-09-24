@@ -102,7 +102,7 @@ WebDAV URL: `http://host:8080/dav/`. Use it with Windows Explorer, macOS Finder,
 | Client | Status |
 |---|---|
 | rclone WebDAV | Automated in CI (create / upload / rename / delete) |
-| litmus (DAV compliance) | Automated in CI (`basic`, `copymove`, `props`, `locks`, `http`) |
+| litmus (DAV compliance) | `basic`, `copymove` and `http` gated in CI; `locks` and `props` report documented limitations |
 | Browser file manager | Supported |
 | Windows 10/11 Explorer | Pending manual verification before the first release |
 | macOS Finder | Pending manual verification before the first release |
@@ -110,6 +110,24 @@ WebDAV URL: `http://host:8080/dav/`. Use it with Windows Explorer, macOS Finder,
 | Mobile app (iOS Files / Solid Explorer) | Pending manual verification before the first release |
 
 Protocol-level behaviour those clients depend on is covered by Go integration tests today: `MOVE` without an `Overwrite` header, collection `href` trailing slashes, `PROPPATCH` on collections returning `207`, `OPTIONS` advertising `DAV: 1, 2` with `MS-Author-Via`, `Range` requests, lock conflicts (`423`) and symlink containment.
+
+### litmus results / litmus 结果
+
+CI compiles litmus 0.13 on the runner and runs it against the built binary. Groups the specification covers are enforced; the remaining failures are deliberate design choices or upstream `x/net/webdav` limitations, listed here with their root cause:
+
+| Group | Result | Notes |
+|---|---|---|
+| `basic` | 16/16 | gated |
+| `copymove` | 13/13 | gated, including the Finder `Overwrite` patch |
+| `http` | gated | protocol details such as `HEAD`, `ETag` and `Range` |
+| `locks` | 30/34 | both `owner_modify` cases patch a dead property; `lock_shared` answers `501`; `fail_complex_cond_put` passes because `If` conditions carrying an ETag are not evaluated |
+| `props` | 10/14 | no dead-property storage (see design patch 3) and `propfind_invalid2` expects a `400` for an invalid namespace declaration that `x/net` tolerates |
+
+Known limitations, none of which affect the supported clients (Windows Explorer, Finder, davfs2, rclone, mobile apps):
+
+- **Dead properties.** `PROPPATCH` answers `207` with a `403` propstat instead of storing arbitrary properties. That is what the Windows Mini-Redirector needs in order to continue, and no supported client reads the values back.
+- **Shared locks.** `LOCK` with `<shared/>` returns `501 Not Implemented`; only exclusive write locks are implemented, matching the specification. Writing to a locked resource without the token still returns `423`.
+- **`If` header conditions.** Only lock tokens are evaluated. ETag and `Not` conditions inside `If` are ignored because the upstream in-memory lock system does not implement them; the project's own conformance tests pin the behaviour that is promised (see `internal/webdav/conformance_test.go`).
 
 ## Release checklist / 发布前检查清单
 

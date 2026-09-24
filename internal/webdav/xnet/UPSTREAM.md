@@ -51,3 +51,24 @@ it can be replayed when the upstream snapshot is refreshed.
   `307` so that non-GET methods keep their verb (RFC 9110). The project builds
   and releases with Go 1.27, and this tolerance only keeps contributors on an
   older toolchain green.
+
+## Known upstream limitations (not patched)
+
+These behaviours are inherited from the upstream snapshot. They are visible in
+a full litmus run and are documented in the README instead of being papered
+over, because none of the supported clients depends on them:
+
+- **Dead properties are not stored.** `Dir`-backed file systems have no place
+  to keep custom properties, so `PROPPATCH` answers `207` with a `403` propstat
+  (patch 3 above). litmus reports this as `owner_modify` (locks) and as
+  `propset`/`propmanyns`/`propget` (props).
+- **Shared locks are rejected with `501`.** `xml.go` (`readLockInfo`) only
+  accepts `<exclusive/>` write locks, with the comment that they are the only
+  kind that matters in practice. litmus reports `lock_shared` and skips the
+  subsequent shared-lock cases.
+- **`If` header conditions only look at lock tokens.** `memLS.lookup` in
+  `lock.go` carries the upstream TODO "support Condition.Not and
+  Condition.ETag", so a conditional request whose list carries a stale ETag is
+  treated as satisfied. litmus reports `fail_complex_cond_put`.
+- **`PROPFIND` accepts invalid namespace declarations** instead of answering
+  `400`, which litmus reports as `propfind_invalid2`.
