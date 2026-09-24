@@ -28,9 +28,11 @@ jobs:
         with: { version: v1.61 }
       - name: Check Conventional Commit pull request title
         if: github.event_name == 'pull_request'
-        env: { PR_TITLE: ${{ github.event.pull_request.title }} }
+        env:
+          PR_TITLE: ${{ github.event.pull_request.title }}
         shell: bash
-        run: echo "$PR_TITLE" | grep -Eq '^(feat|fix|docs|refactor|test|chore|build|ci|perf|revert)(\([^)]+\))?!?: .+'
+        run: |
+          echo "$PR_TITLE" | grep -Eq '^(feat|fix|docs|refactor|test|chore|build|ci|perf|revert)(\([^)]+\))?!?: .+'
 
   compatibility:
     # Docker is only required here: the local development loop never needs it.
