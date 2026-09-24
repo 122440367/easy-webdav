@@ -18,15 +18,10 @@ archives:
         formats: [zip]
 checksum:
   name_template: checksums.txt
-dockers_v2:
-  - images: [ghcr.io/122440367/easy-webdav]
-    tags: ["{{ .Tag }}", "{{ .Major }}.{{ .Minor }}", "latest"]
-    platforms: [linux/amd64, linux/arm64]
-    dockerfile: deploy/Dockerfile
-    build_args:
-      VERSION: "{{ .Version }}"
-      COMMIT: "{{ .Commit }}"
-      BUILT: "{{ .Date }}"
+# The container image is built and pushed by .github/workflows/release.yml with
+# docker/build-push-action: goreleaser's docker pipeline hands the Dockerfile a
+# context that only contains its own artifacts, while deploy/Dockerfile compiles
+# the frontend and backend from the repository sources.
 release:
   prerelease: auto
   header: "## easy-webdav {{ .Tag }}"

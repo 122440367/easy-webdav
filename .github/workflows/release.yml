@@ -13,8 +13,8 @@ jobs:
         with: { fetch-depth: 0 }
       - uses: actions/setup-go@v5
         with: { go-version: '1.27' }
-      # goreleaser builds the multi-arch image through buildx, and the default
-      # docker driver cannot emit the SBOM attestation it asks for.
+      # The image is built below with buildx (qemu supplies the arm64
+      # emulation, the container driver supports multi-platform output).
       - uses: docker/setup-qemu-action@v3
       - uses: docker/setup-buildx-action@v3
       - uses: docker/login-action@v3
@@ -29,3 +29,25 @@ jobs:
           args: release --clean
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      # Binaries, archives, checksums and release notes come from goreleaser;
+      # the multi-arch image is built here because deploy/Dockerfile compiles
+      # the project from source and needs the whole repository as its context.
+      - id: image
+        name: Compute image metadata
+        run: |
+          version="${GITHUB_REF_NAME#v}"
+          echo "version=${version}" >> "$GITHUB_OUTPUT"
+          echo "tags=ghcr.io/${GITHUB_REPOSITORY}:${GITHUB_REF_NAME},ghcr.io/${GITHUB_REPOSITORY}:${GITHUB_REF_NAME%.*},ghcr.io/${GITHUB_REPOSITORY}:latest" >> "$GITHUB_OUTPUT"
+      - uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: deploy/Dockerfile
+          platforms: linux/amd64,linux/arm64
+          push: true
+          tags: ${{ steps.image.outputs.tags }}
+          build-args: |
+            VERSION=${{ steps.image.outputs.version }}
+            COMMIT=${{ github.sha }}
+            BUILT=${{ github.run_started_at }}
+          cache-from: type=gha,scope=release
+          cache-to: type=gha,mode=max,scope=release
